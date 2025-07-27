@@ -33,66 +33,63 @@ public class Program
 }
 
 public struct Pair<TK, TV>
-{
-	public TK Key;
-
+{    
+    public TK Key;
 	public TV Value;
 }
 
 public class LRU<TK, TV>
-	where TK : notnull
-	where TV : notnull
+    where TK : notnull
+    where TV : notnull
 {
-	public int Size { get; private set; }
+    public int Size { get; private set; }
+    private readonly Dictionary<TK, LinkedListNode<Pair<TK, TV>>> _key_lookup;
+    private readonly LinkedList<Pair<TK, TV>> _entries;
 
-	private readonly Dictionary<TK, LinkedListNode<Pair<TK, TV>>> _key_lookup;
+    public LRU(int size)    
+    {
+        Size = size;
+        _key_lookup = new Dictionary<TK, LinkedListNode<Pair<TK, TV>>>(size);
+        _entries = new LinkedList<Pair<TK, TV>>();
+    }
 
-	private readonly LinkedList<Pair<TK, TV>> _entries;
+    public bool TryGet(TK key, out TV value)
+    {
+        if (_key_lookup.TryGetValue(key, out var node))
+        {
+            value = node.ValueRef.Value;
+            _entries.Remove(node);
+            _entries.AddLast(node);
+            return true;
+        }
+        value = default;
+        return false;
+    }
 
-	public LRU(int size)
-	{
-		Size = size;
-		_key_lookup = new Dictionary<TK, LinkedListNode<Pair<TK, TV>>>(size);
-		_entries = new LinkedList<Pair<TK, TV>>();
-	}
-
-	public bool TryGet(TK key, out TV value)
-	{
-		if (_key_lookup.TryGetValue(key, out var node))
-		{
-			value = node.ValueRef.Value;
-			_entries.Remove(node);
-			_entries.AddLast(node);
-			return true;
-		}
-		value = default;
-		return false;
-	}
-
-	public void Put(TK key, TV value)
-	{
-		if (_key_lookup.TryGetValue(key, out var node))
-		{
-			node.ValueRef.Value = value;
-			_entries.Remove(node);
-			_entries.AddLast(node);
-		}
-		else if (_entries.Count == Size)
-		{
-			var first = _entries.First;
-			_key_lookup.Remove(first!.Value.Key);
-			_entries.RemoveFirst();
-			first.ValueRef.Key = key;
-			first.ValueRef.Value = value;
-			_entries.AddLast(first);
-			_key_lookup[key] = first;
-		}
-		else
-		{
-			_entries.AddLast(new Pair<TK, TV> { Key = key, Value = value });
-			_key_lookup[key] = _entries.Last;
-		}
-	}
+    public void Put(TK key, TV value)
+    {
+        if (_key_lookup.TryGetValue(key, out var node))
+        {
+            node.ValueRef.Value = value;
+            _entries.Remove(node);
+            _entries.AddLast(node);
+        }
+        else if (_entries.Count == Size)
+        {
+            var first = _entries.First;
+            _key_lookup.Remove(first!.Value.Key);
+            _entries.RemoveFirst();
+            first.ValueRef.Key = key;
+            first.ValueRef.Value = value;
+            _entries.AddLast(first);
+            _key_lookup[key] = first;
+        }
+        else
+        {
+            _entries.AddLast(new Pair<TK, TV> { Key = key, Value = value });
+            _key_lookup[key] = _entries.Last;
+        }
+    }
 }
 
 public class LCG
