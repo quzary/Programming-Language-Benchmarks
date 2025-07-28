@@ -57,7 +57,11 @@ public class LRU<TK, TV>
     {
         if (_key_lookup.TryGetValue(key, out var node))
         {
+#if NET5_0_OR_GREATER
             value = node.ValueRef.Value;
+#else
+            value = node.Value.Value;
+#endif
             _entries.Remove(node);
             _entries.AddLast(node);
             return true;
